@@ -1,8 +1,9 @@
 """AI service with snarky personality."""
 from openai import OpenAI
-from typing import Optional
+from typing import Any, Optional
 import logging
 import random
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -41,11 +42,16 @@ Your summaries should be:
 2. Include sentiment (overall mood of the chat)
 3. Note any events, plans, or action items mentioned
 4. Written with a slightly sarcastic, observational tone
+5. Written in the same language as the majority of the source messages
 
 Format your response as:
 **Summary**: [3-5 sentence summary]
 **Vibe**: [One word or short phrase for sentiment]
 **Events/Plans**: [Any dates, meetings, or action items - or "None spotted" if none]"""
+
+THINK_BLOCK_RE = re.compile(r"<think>.*?</think>", re.IGNORECASE | re.DOTALL)
+REASONING_FIELDS = ("reasoning_content", "reasoning", "reasoning_details", "thinking")
+FINAL_TEXT_FIELDS = ("content", "text", "output_text", "final_answer")
 
 
 class AIService:
@@ -66,13 +72,84 @@ class AIService:
                 ],
                 max_tokens=500
             )
-            summary = response.choices[0].message.content or "I got nothing. Your chat broke me."
+            message = response.choices[0].message
+            summary = self._extract_assistant_text(message)
+            if not summary:
+                self._log_empty_message_shape(message)
+                summary = "I got nothing. Your chat broke me."
             remark = random.choice(SNARKY_SUMMARY_REMARKS)
             return f"{summary}\n\n---\n_\"{remark}\"_"
             
         except Exception as e:
             logger.error(f"AI summary error: {e}")
             return f"My brain broke trying to read your chat. Error: {str(e)}"
+
+    def _extract_assistant_text(self, message: Any) -> str:
+        data = self._message_to_dict(message)
+
+        for field in FINAL_TEXT_FIELDS:
+            text = self._coerce_text(data.get(field))
+            text = self._strip_thinking(text)
+            if text:
+                return text
+
+        return ""
+
+    def _message_to_dict(self, message: Any) -> dict[str, Any]:
+        if isinstance(message, dict):
+            return message
+
+        if hasattr(message, "model_dump"):
+            try:
+                return message.model_dump()
+            except Exception:
+                pass
+
+        data = {}
+        for field in (*FINAL_TEXT_FIELDS, *REASONING_FIELDS):
+            if hasattr(message, field):
+                data[field] = getattr(message, field)
+        return data
+
+    def _coerce_text(self, value: Any) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, str):
+            return value.strip()
+        if isinstance(value, list):
+            parts = []
+            for item in value:
+                if isinstance(item, str):
+                    parts.append(item)
+                elif isinstance(item, dict):
+                    parts.append(str(item.get("text") or item.get("content") or ""))
+            return "\n".join(part for part in parts if part).strip()
+        return str(value).strip()
+
+    def _strip_thinking(self, text: str) -> str:
+        if not text:
+            return ""
+        stripped = THINK_BLOCK_RE.sub("", text).strip()
+        if "</think>" in stripped.lower():
+            stripped = re.split(r"</think>", stripped, flags=re.IGNORECASE)[-1].strip()
+        if stripped.lower().startswith("<think>"):
+            return ""
+        return stripped
+
+    def _log_empty_message_shape(self, message: Any) -> None:
+        data = self._message_to_dict(message)
+        reasoning_lengths = {
+            field: len(self._coerce_text(data.get(field)))
+            for field in REASONING_FIELDS
+            if data.get(field)
+        }
+        if reasoning_lengths:
+            logger.warning(
+                "AI summary returned reasoning but no final content: %s",
+                reasoning_lengths,
+            )
+            return
+        logger.warning("AI summary returned no usable text; message fields: %s", sorted(data.keys()))
     
     def get_mention_response(self, user_message: str, context: Optional[str] = None) -> str:
         try:

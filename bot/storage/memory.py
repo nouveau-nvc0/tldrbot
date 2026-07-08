@@ -8,12 +8,28 @@ class MemoryStorage:
         self.max_messages = max_messages
         self._messages: Dict[int, deque] = defaultdict(lambda: deque(maxlen=max_messages))
         self._summary_context: Dict[int, Dict[str, Any]] = {}
+        self._message_counts: Dict[int, int] = defaultdict(int)
+        self._last_summarized_counts: Dict[int, int] = defaultdict(int)
     
     def store_message(self, chat_id: int, sender_name: str, message_text: str) -> None:
         self._messages[chat_id].append(f"{sender_name}: {message_text}")
+        self._message_counts[chat_id] += 1
     
     def get_recent_messages(self, chat_id: int, num_messages: int) -> List[str]:
         return list(self._messages[chat_id])[-num_messages:]
+
+    def get_unsummarized_messages(self, chat_id: int, num_messages: int) -> List[str]:
+        messages = list(self._messages[chat_id])
+        stored_count = len(messages)
+        total_count = self._message_counts[chat_id]
+        first_stored_count = max(total_count - stored_count, 0)
+        last_summarized_count = self._last_summarized_counts[chat_id]
+
+        start_index = max(last_summarized_count - first_stored_count, 0)
+        return messages[start_index:][-num_messages:]
+
+    def mark_summarized(self, chat_id: int) -> None:
+        self._last_summarized_counts[chat_id] = self._message_counts[chat_id]
     
     def set_summary_context(self, chat_id: int, summary_message_id: int, original_messages: List[str]) -> None:
         self._summary_context[chat_id] = {
@@ -29,4 +45,6 @@ class MemoryStorage:
             self._messages[chat_id].clear()
         if chat_id in self._summary_context:
             del self._summary_context[chat_id]
+        self._message_counts[chat_id] = 0
+        self._last_summarized_counts[chat_id] = 0
 

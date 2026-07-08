@@ -1,11 +1,11 @@
 # TLDRBot
 
-A witty, slightly sarcastic Telegram bot for group chat summarization. Built with Python and an OpenAI-compatible chat completions API, TLDRBot helps teams catch up on conversations with personality.
+A Telegram bot for group chat summarization. Built with Python and an OpenAI-compatible chat completions API.
 
 ## Features
 
 ### Conversation Summarization (`/tldr`)
-Summarize the last N messages in a group chat with a snarky commentary.
+Summarize new messages in a group chat. After a successful summary, the next `/tldr` only includes messages posted after that summary.
 
 ```
 /tldr      → Summarize last 50 messages
@@ -13,7 +13,7 @@ Summarize the last N messages in a group chat with a snarky commentary.
 ```
 
 ### @Mention Replies
-Tag the bot and it'll respond with its signature sarcasm.
+Tag the bot and it will respond using recent chat context.
 
 ```
 @TLDRBot what's everyone talking about?
@@ -23,23 +23,12 @@ Tag the bot and it'll respond with its signature sarcasm.
 Optional. When enabled, drop a TikTok, Instagram Reel, or YouTube Shorts link and the bot automatically downloads and shares the video. It is disabled by default because `yt-dlp` may require cookies or JavaScript support for some sites.
 
 ### Rate Limiting
-Each user gets 10 AI requests per day. The bot will let you know when you're running low (with attitude, of course).
+Each user gets 10 AI requests per day.
 
 ### Token Budget
 `/tldr` prompts are trimmed with a Hugging Face `tokenizer.json` before they are sent to the AI endpoint. By default the bot downloads `Qwen/Qwen3.6-27B`'s tokenizer on startup and keeps at most 64,000 input tokens from the newest chat messages.
 
 If `TOKEN_LIMIT_ENABLED=true` and the tokenizer cannot be downloaded or loaded, the bot exits instead of falling back to an approximate counter. Set `TOKEN_LIMIT_ENABLED=false` to disable this behavior.
-
-## Personality Examples
-
-**On /tldr:**
-> "Summary complete. I'm basically your group's unpaid intern at this point."
-
-**On @mention:**
-> "You rang? I was busy judging other chats."
-
-**On rate limit:**
-> "Whoa there, chatty! You've used me 10 times today. I need a break."
 
 ## Getting Started
 

@@ -30,7 +30,7 @@ class SummarizePlugin(Plugin):
     
     @property
     def commands(self):
-        return [("tldr", "Summarize recent messages")]
+        return [("tldr", "Summarize new messages")]
     
     def register(self, app: Application) -> None:
         app.add_handler(CommandHandler("tldr", self.summarize))
@@ -53,17 +53,15 @@ class SummarizePlugin(Plugin):
             except ValueError:
                 pass
         
-        messages = self.memory.get_recent_messages(chat_id, num_messages)
+        messages = self.memory.get_unsummarized_messages(chat_id, num_messages)
         if not messages:
             await update.message.reply_text(
-                "🤷 I don't have any messages to summarize. "
-                "Either you just added me or everyone's been unusually quiet. "
-                "Both are concerning."
+                "No new messages to summarize."
             )
             return
         
         progress_msg = await update.message.reply_text(
-            "⏳ _Analyzing your chat... This better be worth my time._",
+            "Summarizing...",
             parse_mode="Markdown"
         )
         
@@ -103,6 +101,7 @@ class SummarizePlugin(Plugin):
             await update.message.reply_text(final_text, parse_mode="Markdown")
         
         self.memory.set_summary_context(chat_id, progress_msg.message_id, messages)
+        self.memory.mark_summarized(chat_id)
         
         logger.info(f"Summary generated for user {user_id} in chat {chat_id} ({len(messages)} messages)")
 

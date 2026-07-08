@@ -148,6 +148,10 @@ bot/
 | `OPENAI_API_KEY` | Yes | - | OpenAI-compatible API token |
 | `AI_BASE_URL` | No | OpenAI default | Custom OpenAI-compatible `/v1` endpoint |
 | `AI_MODEL` | No | gpt-4o-mini | Model name to request |
+| `DEBUG` | No | 0 | Enable debug logging, including truncated AI assistant responses |
+| `AI_DEBUG_MAX_CHARS` | No | 12000 | Max characters per debug-logged AI response field |
+| `SUMMARY_MAX_TOKENS` | No | 8192 | Maximum output tokens for summary responses |
+| `SUMMARY_REASONING_RETRY_ENABLED` | No | true | Retry summary once with `/no_think` when the endpoint returns reasoning without final content |
 | `DAILY_LIMIT` | No | 10 | AI uses per user per day |
 | `MAX_MESSAGES` | No | 400 | Messages to store per chat |
 | `DATABASE_URL` | No | - | SQLite/PostgreSQL URL for analytics |

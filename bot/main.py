@@ -14,7 +14,7 @@ from storage import MemoryStorage
 # Configure logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO
+    level=logging.DEBUG if config.DEBUG else logging.INFO
 )
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,14 @@ def main():
         else:
             logger.warning("Analytics database was not initialized")
     
-    ai_service = AIService(config.OPENAI_API_KEY, config.AI_MODEL, config.AI_BASE_URL)
+    ai_service = AIService(
+        config.OPENAI_API_KEY,
+        config.AI_MODEL,
+        config.AI_BASE_URL,
+        summary_max_tokens=config.SUMMARY_MAX_TOKENS,
+        reasoning_retry_enabled=config.SUMMARY_REASONING_RETRY_ENABLED,
+        debug_max_chars=config.AI_DEBUG_MAX_CHARS,
+    )
     rate_limiter = RateLimiter(max_uses_per_day=config.DAILY_LIMIT)
     memory = MemoryStorage(max_messages=config.MAX_MESSAGES)
     token_budget = None

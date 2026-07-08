@@ -2,17 +2,33 @@
 import os
 import json
 
+
+def _bool_env(name: str, default: bool = False) -> bool:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 AI_MODEL = os.environ.get("AI_MODEL", "gpt-4o-mini")
+AI_BASE_URL = (
+    os.environ.get("AI_BASE_URL")
+    or os.environ.get("OPENAI_BASE_URL")
+)
 DATABASE_URL = os.environ.get("DATABASE_URL")
 MAX_MESSAGES = int(os.environ.get("MAX_MESSAGES", "400"))
 DAILY_LIMIT = int(os.environ.get("DAILY_LIMIT", "10"))
 PORT = int(os.environ.get("PORT", "5000"))
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
+AUTO_DOWNLOAD_ENABLED = _bool_env("AUTO_DOWNLOAD_ENABLED", False)
 
 def validate_config():
-    missing = [k for k in ["BOT_TOKEN", "OPENAI_API_KEY"] if not os.environ.get(k)]
+    required = ["BOT_TOKEN"]
+    if not AI_BASE_URL:
+        required.append("OPENAI_API_KEY")
+    missing = [k for k in required if not os.environ.get(k)]
     if missing:
         raise ValueError(f"Missing: {', '.join(missing)}")
 

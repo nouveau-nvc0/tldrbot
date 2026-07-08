@@ -7,7 +7,7 @@ from telegram.ext import MessageHandler, filters
 
 import config
 from core import TLDRBot, AIService, RateLimiter
-from plugins import HelpPlugin, SummarizePlugin, MentionReplyPlugin, AutoDownloadPlugin
+from plugins import HelpPlugin, SummarizePlugin, MentionReplyPlugin
 from storage import MemoryStorage
 
 # Configure logging
@@ -22,19 +22,25 @@ def main():
     config.validate_config()
     
     if config.DATABASE_URL:
-        from storage.analytics import init_database, create_tables
+        from storage.analytics import init_database
         if init_database(config.DATABASE_URL):
-            create_tables()
+            logger.info("Analytics database initialized")
+        else:
+            logger.warning("Analytics database was not initialized")
     
-    ai_service = AIService(config.OPENAI_API_KEY, config.AI_MODEL)
+    ai_service = AIService(config.OPENAI_API_KEY, config.AI_MODEL, config.AI_BASE_URL)
     rate_limiter = RateLimiter(max_uses_per_day=config.DAILY_LIMIT)
     memory = MemoryStorage(max_messages=config.MAX_MESSAGES)
     
     bot = TLDRBot(config.BOT_TOKEN or "")
-    bot.register_plugin(HelpPlugin())
+    bot.register_plugin(HelpPlugin(auto_download_enabled=config.AUTO_DOWNLOAD_ENABLED))
     bot.register_plugin(SummarizePlugin(ai_service, rate_limiter, memory))
     bot.register_plugin(MentionReplyPlugin(ai_service, rate_limiter, memory))
-    bot.register_plugin(AutoDownloadPlugin())
+    if config.AUTO_DOWNLOAD_ENABLED:
+        from plugins import AutoDownloadPlugin
+        bot.register_plugin(AutoDownloadPlugin())
+    else:
+        logger.info("Auto-download plugin disabled")
     
     app = bot.setup()
     

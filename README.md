@@ -1,6 +1,6 @@
 # TLDRBot
 
-A witty, slightly sarcastic Telegram bot for group chat summarization. Built with Python and OpenAI, TLDRBot helps teams catch up on conversations with personality.
+A witty, slightly sarcastic Telegram bot for group chat summarization. Built with Python and an OpenAI-compatible chat completions API, TLDRBot helps teams catch up on conversations with personality.
 
 ## Features
 
@@ -20,7 +20,7 @@ Tag the bot and it'll respond with its signature sarcasm.
 ```
 
 ### Auto Video Downloads
-Drop a TikTok, Instagram Reel, or YouTube Shorts link and the bot automatically downloads and shares the video.
+Optional. When enabled, drop a TikTok, Instagram Reel, or YouTube Shorts link and the bot automatically downloads and shares the video. It is disabled by default because `yt-dlp` may require cookies or JavaScript support for some sites.
 
 ### Rate Limiting
 Each user gets 10 AI requests per day. The bot will let you know when you're running low (with attitude, of course).
@@ -39,9 +39,9 @@ Each user gets 10 AI requests per day. The bot will let you know when you're run
 ## Getting Started
 
 ### Prerequisites
-- Python 3.10+
+- Python 3.14+
 - Telegram Bot Token (from [@BotFather](https://t.me/BotFather))
-- OpenAI API Key
+- An OpenAI-compatible API endpoint and token
 
 ### Installation
 
@@ -66,18 +66,39 @@ pip install -r requirements.txt
 ```bash
 # Required
 export BOT_TOKEN="your_telegram_bot_token"
-export OPENAI_API_KEY="your_openai_api_key"
+export OPENAI_API_KEY="your_endpoint_token"
 
 # Optional
-export AI_MODEL="gpt-4o-mini"      # Default: gpt-4o-mini
+export AI_BASE_URL="https://your-inference.example.com/v1"
+export AI_MODEL="openai/qwen3.6-27b"
 export DAILY_LIMIT="10"            # AI uses per user per day
 export MAX_MESSAGES="400"          # Max messages to store per chat
-export DATABASE_URL="postgresql://..."  # For analytics (optional)
+export DATABASE_URL="sqlite:///data/tldrbot.sqlite"
+export AUTO_DOWNLOAD_ENABLED="false"
 ```
 
 5. Run the bot:
 ```bash
-python -m bot.main
+cd bot
+python main.py
+```
+
+### Docker Compose
+
+Copy `.env.example` to `.env`, fill in `BOT_TOKEN`, `OPENAI_API_KEY`, and `AI_BASE_URL`, then run:
+
+```bash
+docker compose up --build
+```
+
+The compose setup stores SQLite analytics data in the `bot-data` volume and does not run an inference server. Point `AI_BASE_URL` at your own OpenAI-compatible endpoint, including llama.cpp servers that expose `/v1/chat/completions`.
+
+For a llama.cpp endpoint, configure the model context on the inference side, for example `--ctx-size 262144`, and use:
+
+```bash
+AI_BASE_URL=https://your-inference.example.com/v1
+AI_MODEL=openai/qwen3.6-27b
+OPENAI_API_KEY=your_endpoint_token
 ```
 
 ## Project Structure
@@ -114,11 +135,14 @@ bot/
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `BOT_TOKEN` | Yes | - | Telegram bot token |
-| `OPENAI_API_KEY` | Yes | - | OpenAI API key |
-| `AI_MODEL` | No | gpt-4o-mini | OpenAI model to use |
+| `OPENAI_API_KEY` | Yes | - | OpenAI-compatible API token |
+| `AI_BASE_URL` | No | OpenAI default | Custom OpenAI-compatible `/v1` endpoint |
+| `AI_MODEL` | No | gpt-4o-mini | Model name to request |
 | `DAILY_LIMIT` | No | 10 | AI uses per user per day |
 | `MAX_MESSAGES` | No | 400 | Messages to store per chat |
-| `DATABASE_URL` | No | - | PostgreSQL URL for analytics |
+| `DATABASE_URL` | No | - | SQLite/PostgreSQL URL for analytics |
+| `AUTO_DOWNLOAD_ENABLED` | No | false | Enable `yt-dlp` video auto-download plugin |
+| `VIDEO_URL_PATTERNS` | No | built-in list | JSON array of URL regexes used when auto-download is enabled |
 
 ## Contributing
 

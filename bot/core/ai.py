@@ -49,9 +49,12 @@ Format your response as:
 
 
 class AIService:
-    def __init__(self, api_key: str | None, model: str = "gpt-4o-mini"):
+    def __init__(self, api_key: str | None, model: str = "gpt-4o-mini", base_url: str | None = None):
         self.model = model
-        self.client = OpenAI(api_key=api_key)
+        client_kwargs = {"api_key": api_key or "sk-no-key-required"}
+        if base_url:
+            client_kwargs["base_url"] = base_url.rstrip("/")
+        self.client = OpenAI(**client_kwargs)
     
     def get_summary(self, messages_text: str, num_messages: int) -> str:
         try:

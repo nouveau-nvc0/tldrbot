@@ -32,7 +32,13 @@ class Plugin(ABC):
 from plugins.help import HelpPlugin
 from plugins.summarize import SummarizePlugin
 from plugins.mention_reply import MentionReplyPlugin
-from plugins.auto_download import AutoDownloadPlugin
+
+
+def __getattr__(name: str):
+    if name == "AutoDownloadPlugin":
+        from plugins.auto_download import AutoDownloadPlugin
+        return AutoDownloadPlugin
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [
     'Plugin',

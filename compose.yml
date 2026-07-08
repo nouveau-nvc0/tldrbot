@@ -1,0 +1,18 @@
+services:
+  bot:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_MODEL: ${AI_MODEL:-openai/qwen3.6-27b}
+      AUTO_DOWNLOAD_ENABLED: ${AUTO_DOWNLOAD_ENABLED:-false}
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////data/tldrbot.sqlite}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - bot-data:/data
+    restart: unless-stopped
+
+volumes:
+  bot-data:

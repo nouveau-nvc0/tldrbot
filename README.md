@@ -25,6 +25,11 @@ Optional. When enabled, drop a TikTok, Instagram Reel, or YouTube Shorts link an
 ### Rate Limiting
 Each user gets 10 AI requests per day. The bot will let you know when you're running low (with attitude, of course).
 
+### Token Budget
+`/tldr` prompts are trimmed with a Hugging Face `tokenizer.json` before they are sent to the AI endpoint. By default the bot downloads `Qwen/Qwen3.6-27B`'s tokenizer on startup and keeps at most 64,000 input tokens from the newest chat messages.
+
+If `TOKEN_LIMIT_ENABLED=true` and the tokenizer cannot be downloaded or loaded, the bot exits instead of falling back to an approximate counter. Set `TOKEN_LIMIT_ENABLED=false` to disable this behavior.
+
 ## Personality Examples
 
 **On /tldr:**
@@ -75,6 +80,9 @@ export DAILY_LIMIT="10"            # AI uses per user per day
 export MAX_MESSAGES="400"          # Max messages to store per chat
 export DATABASE_URL="sqlite:///data/tldrbot.sqlite"
 export AUTO_DOWNLOAD_ENABLED="false"
+export TOKEN_LIMIT_ENABLED="true"
+export TOKEN_LIMIT_MAX_INPUT_TOKENS="64000"
+export TOKENIZER_REPO_ID="Qwen/Qwen3.6-27B"
 ```
 
 5. Run the bot:
@@ -100,6 +108,8 @@ AI_BASE_URL=https://your-inference.example.com/v1
 AI_MODEL=openai/qwen3.6-27b
 OPENAI_API_KEY=your_endpoint_token
 ```
+
+The tokenizer cache also lives in the `bot-data` volume by default at `/data/tokenizers`, so startup only downloads `tokenizer.json` when it is missing.
 
 ## Project Structure
 
@@ -141,6 +151,14 @@ bot/
 | `DAILY_LIMIT` | No | 10 | AI uses per user per day |
 | `MAX_MESSAGES` | No | 400 | Messages to store per chat |
 | `DATABASE_URL` | No | - | SQLite/PostgreSQL URL for analytics |
+| `TOKEN_LIMIT_ENABLED` | No | true | Enable fail-fast tokenizer-backed prompt trimming |
+| `TOKEN_LIMIT_MAX_INPUT_TOKENS` | No | 64000 | Maximum `/tldr` input tokens sent to the AI endpoint |
+| `TOKENIZER_REPO_ID` | No | Qwen/Qwen3.6-27B | Hugging Face repo used for `tokenizer.json` |
+| `TOKENIZER_REVISION` | No | main | Hugging Face revision for the tokenizer |
+| `TOKENIZER_FILENAME` | No | tokenizer.json | Tokenizer file inside the repo |
+| `TOKENIZER_CACHE_DIR` | No | data/tokenizers | Local tokenizer cache directory |
+| `TOKENIZER_URL` | No | - | Direct tokenizer URL override |
+| `HF_TOKEN` | No | - | Optional Hugging Face token for tokenizer download |
 | `AUTO_DOWNLOAD_ENABLED` | No | false | Enable `yt-dlp` video auto-download plugin |
 | `VIDEO_URL_PATTERNS` | No | built-in list | JSON array of URL regexes used when auto-download is enabled |
 

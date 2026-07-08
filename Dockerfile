@@ -13,7 +13,7 @@ RUN pip install --upgrade pip \
 COPY bot ./bot
 
 RUN useradd --create-home --shell /usr/sbin/nologin appuser \
-    && mkdir -p /data \
+    && mkdir -p /data/tokenizers \
     && chown -R appuser:appuser /app /data
 
 USER appuser

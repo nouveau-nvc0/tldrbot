@@ -4,6 +4,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 from plugins import Plugin
 from core.ai import AIService
 from core.rate_limiter import RateLimiter
+from core.token_budget import TokenBudget
 from storage.memory import MemoryStorage
 import logging
 
@@ -11,10 +12,17 @@ logger = logging.getLogger(__name__)
 
 
 class SummarizePlugin(Plugin):
-    def __init__(self, ai_service: AIService, rate_limiter: RateLimiter, memory: MemoryStorage):
+    def __init__(
+        self,
+        ai_service: AIService,
+        rate_limiter: RateLimiter,
+        memory: MemoryStorage,
+        token_budget: TokenBudget | None = None,
+    ):
         self.ai = ai_service
         self.rate_limiter = rate_limiter
         self.memory = memory
+        self.token_budget = token_budget
     
     @property
     def name(self) -> str:
@@ -62,10 +70,26 @@ class SummarizePlugin(Plugin):
         self.rate_limiter.record_use(user_id)
         remaining = self.rate_limiter.remaining(user_id)
         
-        combined_text = "\n".join(messages)
+        token_result = None
+        if self.token_budget:
+            token_result = self.token_budget.trim_messages(messages)
+            messages = token_result.messages
+            logger.info(
+                "Prepared summary prompt with %s/%s messages and %s tokens",
+                token_result.included_messages,
+                token_result.requested_messages,
+                token_result.token_count,
+            )
+
+        combined_text = token_result.text if token_result else "\n".join(messages)
         summary = self.ai.get_summary(combined_text, len(messages))
         
         final_text = f"📝 *Summary* (last {len(messages)} messages)\n\n{summary}"
+        if token_result and token_result.trimmed:
+            final_text += (
+                f"\n\n_Trimmed to {token_result.token_count} input tokens "
+                f"from the newest messages._"
+            )
         if remaining <= 3:
             final_text += f"\n\n⚠️ _You have {remaining} uses left today. Pace yourself._"
         

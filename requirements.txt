@@ -1,6 +1,7 @@
 # Core dependencies
 python-telegram-bot[webhooks]>=21.0
 openai>=1.0
+tokenizers>=0.22
 yt-dlp>=2024.0
 
 # Optional - for analytics

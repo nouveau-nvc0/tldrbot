@@ -7,6 +7,7 @@ from telegram.ext import MessageHandler, filters
 
 import config
 from core import TLDRBot, AIService, RateLimiter
+from core.token_budget import TokenBudget
 from plugins import HelpPlugin, SummarizePlugin, MentionReplyPlugin
 from storage import MemoryStorage
 
@@ -31,10 +32,16 @@ def main():
     ai_service = AIService(config.OPENAI_API_KEY, config.AI_MODEL, config.AI_BASE_URL)
     rate_limiter = RateLimiter(max_uses_per_day=config.DAILY_LIMIT)
     memory = MemoryStorage(max_messages=config.MAX_MESSAGES)
+    token_budget = None
+    if config.TOKEN_LIMIT_ENABLED:
+        token_budget = TokenBudget.from_config(config)
+        token_budget.prepare()
+    else:
+        logger.info("Token limiter disabled")
     
     bot = TLDRBot(config.BOT_TOKEN or "")
     bot.register_plugin(HelpPlugin(auto_download_enabled=config.AUTO_DOWNLOAD_ENABLED))
-    bot.register_plugin(SummarizePlugin(ai_service, rate_limiter, memory))
+    bot.register_plugin(SummarizePlugin(ai_service, rate_limiter, memory, token_budget))
     bot.register_plugin(MentionReplyPlugin(ai_service, rate_limiter, memory))
     if config.AUTO_DOWNLOAD_ENABLED:
         from plugins import AutoDownloadPlugin

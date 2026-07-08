@@ -23,6 +23,14 @@ DAILY_LIMIT = int(os.environ.get("DAILY_LIMIT", "10"))
 PORT = int(os.environ.get("PORT", "5000"))
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 AUTO_DOWNLOAD_ENABLED = _bool_env("AUTO_DOWNLOAD_ENABLED", False)
+TOKEN_LIMIT_ENABLED = _bool_env("TOKEN_LIMIT_ENABLED", True)
+TOKEN_LIMIT_MAX_INPUT_TOKENS = int(os.environ.get("TOKEN_LIMIT_MAX_INPUT_TOKENS", "64000"))
+TOKENIZER_REPO_ID = os.environ.get("TOKENIZER_REPO_ID", "Qwen/Qwen3.6-27B")
+TOKENIZER_REVISION = os.environ.get("TOKENIZER_REVISION", "main")
+TOKENIZER_FILENAME = os.environ.get("TOKENIZER_FILENAME", "tokenizer.json")
+TOKENIZER_CACHE_DIR = os.environ.get("TOKENIZER_CACHE_DIR", "data/tokenizers")
+TOKENIZER_URL = os.environ.get("TOKENIZER_URL")
+HF_TOKEN = os.environ.get("HF_TOKEN")
 
 def validate_config():
     required = ["BOT_TOKEN"]
